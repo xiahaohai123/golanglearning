@@ -7,7 +7,9 @@ import (
 )
 
 func TestGreet(t *testing.T) {
-	buffer := bytes.Buffer{}
+	var buffer = bytes.Buffer{}
+	buffer.Write(nil)
+	//Greet(buffer, "Chris")
 	Greet(&buffer, "Chris")
 
 	got := buffer.String()
