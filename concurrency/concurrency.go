@@ -21,6 +21,7 @@ func CheckWebsites(wc WebsiteChecker, urls []string) map[string]bool {
 		}(url)
 	}
 
+	// 注意 resultChannel，它在循环中持续输出结果
 	for i := 0; i < len(urls); i++ {
 		result := <-resultChannel
 		results[result.string] = result.bool
