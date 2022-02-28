@@ -25,6 +25,8 @@ func (f *FileSystemStore) RecordWin(name string) {
 	player := league.Find(name)
 	if player != nil {
 		player.Wins++
+	} else {
+		league = append(league, Player{name, 1})
 	}
 	f.rewindStore()
 	_ = json.NewEncoder(f.database).Encode(league)
