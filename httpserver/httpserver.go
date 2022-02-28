@@ -21,6 +21,10 @@ func (i InMemoryPlayerStore) RecordWin(name string) {
 	i.store[name]++
 }
 
+func (i *InMemoryPlayerStore) GetLeague() []Player {
+	return nil
+}
+
 func main() {
 	store := NewInMemoryPlayerStore()
 	server := NewPlayerServer(store)

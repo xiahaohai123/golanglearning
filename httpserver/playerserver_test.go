@@ -1,15 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
 type StubPlayerStore struct {
 	scores   map[string]int
 	winCalls []string
+	league   []Player
 }
 
 func (s StubPlayerStore) GetPlayerScore(name string) int {
@@ -21,12 +25,17 @@ func (s *StubPlayerStore) RecordWin(name string) {
 	s.winCalls = append(s.winCalls, name)
 }
 
+func (s *StubPlayerStore) GetLeague() []Player {
+	return s.league
+}
+
 func TestGetScore(t *testing.T) {
 	store := StubPlayerStore{
 		map[string]int{
 			"Pepper": 20,
 			"Floyd":  10,
 		},
+		nil,
 		nil,
 	}
 
@@ -61,6 +70,7 @@ func TestStoreWins(t *testing.T) {
 	store := StubPlayerStore{
 		map[string]int{},
 		[]string{},
+		nil,
 	}
 	server := NewPlayerServer(&store)
 
@@ -99,16 +109,40 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 }
 
 func TestLeague(t *testing.T) {
-	server := NewPlayerServer(&StubPlayerStore{})
+	t.Run("it returns the league table as JSON", func(t *testing.T) {
+		wantedLeague := []Player{
+			{"Cleo", 32},
+			{"Chris", 20},
+			{"Tiest", 14},
+		}
 
-	t.Run("it returns 200 on /league", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+		store := StubPlayerStore{nil, nil, wantedLeague}
+		server := NewPlayerServer(&store)
+
+		request, _ := newLeagueRequest()
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
 
+		got := getLeagueFromResponse(t, response.Body)
 		assertIntEquals(t, response.Code, http.StatusOK)
+		assertPlayerSliceEquals(t, got, wantedLeague)
 	})
+}
+
+func getLeagueFromResponse(t *testing.T, body io.Reader) []Player {
+	t.Helper()
+	var got []Player
+
+	err := json.NewDecoder(body).Decode(&got)
+	if err != nil {
+		t.Fatalf("Unable to parse response from server '%s' into slice of Player, '%v'", body, err)
+	}
+	return got
+}
+
+func newLeagueRequest() (*http.Request, error) {
+	return http.NewRequest(http.MethodGet, "/league", nil)
 }
 
 func newGetScoreRequest(name string) *http.Request {
@@ -132,5 +166,11 @@ func assertIntEquals(t *testing.T, got int, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf("got %d, want %d", got, want)
+	}
+}
+
+func assertPlayerSliceEquals(t *testing.T, got, wantedLeague []Player) {
+	if !reflect.DeepEqual(got, wantedLeague) {
+		t.Errorf("got %v but want %v", got, wantedLeague)
 	}
 }
