@@ -96,7 +96,10 @@ func TestStoreWins(t *testing.T) {
 
 // 集成测试
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	store := NewInMemoryPlayerStore()
+	db, cleanDatabase := createTempFile(t, "")
+	defer cleanDatabase()
+
+	store := &FileSystemStore{db}
 	server := NewPlayerServer(store)
 	player := "Pepper"
 
