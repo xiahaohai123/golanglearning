@@ -1,11 +1,16 @@
 package main
 
 import (
-	"os"
+	"io"
 )
 
+type ReadWriteSeekTruncate interface {
+	io.ReadWriteSeeker
+	Truncate(size int64) error
+}
+
 type Tape struct {
-	file *os.File
+	file ReadWriteSeekTruncate
 }
 
 func (t *Tape) Write(p []byte) (n int, err error) {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"os"
 )
 
 type FileSystemPlayerStore struct {
@@ -10,7 +9,7 @@ type FileSystemPlayerStore struct {
 	league   League
 }
 
-func NewFileSystemPlayerStore(database *os.File) *FileSystemPlayerStore {
+func NewFileSystemPlayerStore(database ReadWriteSeekTruncate) *FileSystemPlayerStore {
 	_, _ = database.Seek(0, 0)
 	league, _ := NewLeague(database)
 	return &FileSystemPlayerStore{json.NewEncoder(&Tape{database}), league}

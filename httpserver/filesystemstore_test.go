@@ -66,7 +66,7 @@ func TestFileSystemStore(t *testing.T) {
 	})
 }
 
-func createTempFile(t *testing.T, initialData string) (*os.File, func()) {
+func createTempFile(t *testing.T, initialData string) (ReadWriteSeekTruncate, func()) {
 	t.Helper()
 
 	tempFile, err := ioutil.TempFile("", "db")
