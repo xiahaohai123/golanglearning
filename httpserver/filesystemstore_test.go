@@ -14,7 +14,8 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("/league from a reader", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store := NewFileSystemPlayerStore(database)
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 
 		got := store.GetLeague()
 		want := []Player{
@@ -31,7 +32,8 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("get player score", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store := NewFileSystemPlayerStore(database)
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 
 		got := store.GetPlayerScore("Cleo")
 		want := 10
@@ -45,7 +47,8 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("store wins for existing players", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store := NewFileSystemPlayerStore(database)
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 		store.RecordWin("Chris")
 
 		got := store.GetPlayerScore("Chris")
@@ -56,7 +59,8 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("store wins for new players", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store := NewFileSystemPlayerStore(database)
+		store, err := NewFileSystemPlayerStore(database)
+		assertNoError(t, err)
 
 		store.RecordWin("Pepper")
 
@@ -66,7 +70,18 @@ func TestFileSystemStore(t *testing.T) {
 	})
 }
 
-func createTempFile(t *testing.T, initialData string) (ReadWriteSeekTruncate, func()) {
+func TestNewFileSystemPlayerStore(t *testing.T) {
+	t.Run("works with an empty file", func(t *testing.T) {
+		file, removeFile := createTempFile(t, "")
+		defer removeFile()
+
+		_, err := NewFileSystemPlayerStore(file)
+
+		assertNoError(t, err)
+	})
+}
+
+func createTempFile(t *testing.T, initialData string) (*os.File, func()) {
 	t.Helper()
 
 	tempFile, err := ioutil.TempFile("", "db")
@@ -84,4 +99,11 @@ func createTempFile(t *testing.T, initialData string) (ReadWriteSeekTruncate, fu
 		_ = os.Remove(tempFile.Name())
 	}
 	return tempFile, removeFile
+}
+
+func assertNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("didnt expect an error but got one, %v", err)
+	}
 }

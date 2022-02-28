@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
 )
 
 type FileSystemPlayerStore struct {
@@ -9,10 +11,25 @@ type FileSystemPlayerStore struct {
 	league   League
 }
 
-func NewFileSystemPlayerStore(database ReadWriteSeekTruncate) *FileSystemPlayerStore {
-	_, _ = database.Seek(0, 0)
-	league, _ := NewLeague(database)
-	return &FileSystemPlayerStore{json.NewEncoder(&Tape{database}), league}
+func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
+	_, _ = file.Seek(0, 0)
+
+	info, err := file.Stat()
+
+	if err != nil {
+		return nil, fmt.Errorf("problem getting file info from file %s, %v", file.Name(), err)
+	}
+
+	if info.Size() == 0 {
+		_, _ = file.Write([]byte("[]"))
+		_, _ = file.Seek(0, 0)
+	}
+
+	league, err := NewLeague(file)
+	if err != nil {
+		return nil, fmt.Errorf("problem loading player store from file %s, %v", file.Name(), err)
+	}
+	return &FileSystemPlayerStore{json.NewEncoder(&Tape{file}), league}, nil
 }
 
 func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
