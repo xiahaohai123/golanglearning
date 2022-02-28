@@ -94,6 +94,7 @@ func TestStoreWins(t *testing.T) {
 	})
 }
 
+// 集成测试
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	store := NewInMemoryPlayerStore()
 	server := NewPlayerServer(store)
@@ -103,11 +104,26 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
 	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
 
-	response := httptest.NewRecorder()
-	server.ServeHTTP(response, newGetScoreRequest(player))
-	assertIntEquals(t, response.Code, http.StatusOK)
+	t.Run("get score", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		server.ServeHTTP(response, newGetScoreRequest(player))
+		assertIntEquals(t, response.Code, http.StatusOK)
 
-	assertStringEquals(t, response.Body.String(), "3")
+		assertStringEquals(t, response.Body.String(), "3")
+	})
+
+	t.Run("get leagues", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		server.ServeHTTP(response, newLeagueRequest())
+
+		assertIntEquals(t, response.Code, http.StatusOK)
+		assertContentType(t, response, jsonContentType)
+		got := getLeagueFromResponse(t, response.Body)
+		wantedLeague := []Player{
+			{"Pepper", 3},
+		}
+		assertPlayerSliceEquals(t, got, wantedLeague)
+	})
 }
 
 func TestLeague(t *testing.T) {
@@ -121,7 +137,7 @@ func TestLeague(t *testing.T) {
 		store := StubPlayerStore{nil, nil, wantedLeague}
 		server := NewPlayerServer(&store)
 
-		request, _ := newLeagueRequest()
+		request := newLeagueRequest()
 		response := httptest.NewRecorder()
 
 		server.ServeHTTP(response, request)
@@ -151,8 +167,9 @@ func getLeagueFromResponse(t *testing.T, body io.Reader) []Player {
 	return got
 }
 
-func newLeagueRequest() (*http.Request, error) {
-	return http.NewRequest(http.MethodGet, "/league", nil)
+func newLeagueRequest() *http.Request {
+	request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+	return request
 }
 
 func newGetScoreRequest(name string) *http.Request {
@@ -180,6 +197,7 @@ func assertIntEquals(t *testing.T, got int, want int) {
 }
 
 func assertPlayerSliceEquals(t *testing.T, got, wantedLeague []Player) {
+	t.Helper()
 	if !reflect.DeepEqual(got, wantedLeague) {
 		t.Errorf("got %v but want %v", got, wantedLeague)
 	}
