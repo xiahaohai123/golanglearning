@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"summersea.top/golanglearning/winscounter"
 )
 
 const dbFilename = "game.db.json"
@@ -14,12 +15,12 @@ func main() {
 		log.Fatalf("problem opening %s %v", dbFilename, err)
 	}
 
-	store, err := NewFileSystemPlayerStore(file)
+	store, err := poker.NewFileSystemPlayerStore(file)
 	if err != nil {
 		log.Fatalf("didnt expect an error but got one, %v", err)
 	}
 
-	server := NewPlayerServer(store)
+	server := poker.NewPlayerServer(store)
 	if err = http.ListenAndServe(":5000", server); err != nil {
 		log.Fatalf("could not listen on port 5000 %v", err)
 	}
