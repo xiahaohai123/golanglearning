@@ -18,9 +18,10 @@ func TestFileSystemStore(t *testing.T) {
 		assertNoError(t, err)
 
 		got := store.GetLeague()
+		// 排序
 		want := []Player{
-			{"Cleo", 10},
 			{"Chris", 33},
+			{"Cleo", 10},
 		}
 		assertPlayerSliceEquals(t, got, want)
 
