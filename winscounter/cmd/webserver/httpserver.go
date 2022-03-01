@@ -3,21 +3,16 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"summersea.top/golanglearning/winscounter"
 )
 
 const dbFilename = "game.db.json"
 
 func main() {
-	file, err := os.OpenFile(dbFilename, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatalf("problem opening %s %v", dbFilename, err)
-	}
+	store, err := poker.FileSystemPlayerStoreFromFile(dbFilename)
 
-	store, err := poker.NewFileSystemPlayerStore(file)
 	if err != nil {
-		log.Fatalf("didnt expect an error but got one, %v", err)
+		log.Fatal(err)
 	}
 
 	server := poker.NewPlayerServer(store)
