@@ -1,8 +1,9 @@
-package poker
+package poker_test
 
 import (
 	"io/ioutil"
 	"os"
+	poker "summersea.top/golanglearning/winscounter"
 	"testing"
 )
 
@@ -14,12 +15,12 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("/league from a reader", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store, err := NewFileSystemPlayerStore(database)
+		store, err := poker.NewFileSystemPlayerStore(database)
 		assertNoError(t, err)
 
 		got := store.GetLeague()
 		// 排序
-		want := []Player{
+		want := []poker.Player{
 			{"Chris", 33},
 			{"Cleo", 10},
 		}
@@ -33,7 +34,7 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("get player score", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store, err := NewFileSystemPlayerStore(database)
+		store, err := poker.NewFileSystemPlayerStore(database)
 		assertNoError(t, err)
 
 		got := store.GetPlayerScore("Cleo")
@@ -48,7 +49,7 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("store wins for existing players", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store, err := NewFileSystemPlayerStore(database)
+		store, err := poker.NewFileSystemPlayerStore(database)
 		assertNoError(t, err)
 		store.RecordWin("Chris")
 
@@ -60,7 +61,7 @@ func TestFileSystemStore(t *testing.T) {
 	t.Run("store wins for new players", func(t *testing.T) {
 		database, cleanDatabase := createTempFile(t, initData)
 		defer cleanDatabase()
-		store, err := NewFileSystemPlayerStore(database)
+		store, err := poker.NewFileSystemPlayerStore(database)
 		assertNoError(t, err)
 
 		store.RecordWin("Pepper")
@@ -76,7 +77,7 @@ func TestNewFileSystemPlayerStore(t *testing.T) {
 		file, removeFile := createTempFile(t, "")
 		defer removeFile()
 
-		_, err := NewFileSystemPlayerStore(file)
+		_, err := poker.NewFileSystemPlayerStore(file)
 
 		assertNoError(t, err)
 	})

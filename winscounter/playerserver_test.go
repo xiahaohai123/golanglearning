@@ -1,4 +1,4 @@
-package poker
+package poker_test
 
 import (
 	"encoding/json"
@@ -7,41 +7,21 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	poker "summersea.top/golanglearning/winscounter"
 	"testing"
 )
 
 const jsonContentType = "application/json"
 
-type StubPlayerStore struct {
-	scores   map[string]int
-	winCalls []string
-	league   League
-}
-
-func (s StubPlayerStore) GetPlayerScore(name string) int {
-	score := s.scores[name]
-	return score
-}
-
-func (s *StubPlayerStore) RecordWin(name string) {
-	s.winCalls = append(s.winCalls, name)
-}
-
-func (s *StubPlayerStore) GetLeague() League {
-	return s.league
-}
-
 func TestGetScore(t *testing.T) {
-	store := StubPlayerStore{
-		map[string]int{
+	store := poker.StubPlayerStore{
+		Scores: map[string]int{
 			"Pepper": 20,
 			"Floyd":  10,
 		},
-		nil,
-		nil,
 	}
 
-	server := NewPlayerServer(&store)
+	server := poker.NewPlayerServer(&store)
 
 	t.Run("returns Pepper's score", func(t *testing.T) {
 		request := newGetScoreRequest("Pepper")
@@ -69,12 +49,11 @@ func TestGetScore(t *testing.T) {
 }
 
 func TestStoreWins(t *testing.T) {
-	store := StubPlayerStore{
-		map[string]int{},
-		[]string{},
-		nil,
+	store := poker.StubPlayerStore{
+		Scores:   map[string]int{},
+		WinCalls: []string{},
 	}
-	server := NewPlayerServer(&store)
+	server := poker.NewPlayerServer(&store)
 
 	t.Run("it records wins on POST", func(t *testing.T) {
 		player := "Pepper"
@@ -93,9 +72,9 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	file, cleanDatabase := createTempFile(t, "[]")
 	defer cleanDatabase()
 
-	store, err := NewFileSystemPlayerStore(file)
+	store, err := poker.NewFileSystemPlayerStore(file)
 	assertNoError(t, err)
-	server := NewPlayerServer(store)
+	server := poker.NewPlayerServer(store)
 	player := "Pepper"
 
 	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
@@ -117,7 +96,7 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 		assertIntEquals(t, response.Code, http.StatusOK)
 		assertContentType(t, response, jsonContentType)
 		got := getLeagueFromResponse(t, response.Body)
-		wantedLeague := []Player{
+		wantedLeague := poker.League{
 			{"Pepper", 3},
 		}
 		assertPlayerSliceEquals(t, got, wantedLeague)
@@ -126,14 +105,14 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 
 func TestLeague(t *testing.T) {
 	t.Run("it returns the league table as JSON", func(t *testing.T) {
-		wantedLeague := []Player{
+		wantedLeague := poker.League{
 			{"Cleo", 32},
 			{"Chris", 20},
 			{"Tiest", 14},
 		}
 
-		store := StubPlayerStore{nil, nil, wantedLeague}
-		server := NewPlayerServer(&store)
+		store := poker.StubPlayerStore{League: wantedLeague}
+		server := poker.NewPlayerServer(&store)
 
 		request := newLeagueRequest()
 		response := httptest.NewRecorder()
@@ -154,9 +133,9 @@ func assertContentType(t *testing.T, response *httptest.ResponseRecorder, want s
 	}
 }
 
-func getLeagueFromResponse(t *testing.T, body io.Reader) []Player {
+func getLeagueFromResponse(t *testing.T, body io.Reader) poker.League {
 	t.Helper()
-	var got []Player
+	var got poker.League
 
 	err := json.NewDecoder(body).Decode(&got)
 	if err != nil {
@@ -194,21 +173,21 @@ func assertIntEquals(t *testing.T, got int, want int) {
 	}
 }
 
-func assertPlayerSliceEquals(t *testing.T, got, wantedLeague []Player) {
+func assertPlayerSliceEquals(t *testing.T, got, wantedLeague poker.League) {
 	t.Helper()
 	if !reflect.DeepEqual(got, wantedLeague) {
 		t.Errorf("got %v but want %v", got, wantedLeague)
 	}
 }
 
-func assertPlayerWin(t *testing.T, store *StubPlayerStore, winner string) {
+func assertPlayerWin(t *testing.T, store *poker.StubPlayerStore, winner string) {
 	t.Helper()
 
-	if len(store.winCalls) != 1 {
-		t.Fatalf("got %d calls to RecordWin but want %d", len(store.winCalls), 1)
+	if len(store.WinCalls) != 1 {
+		t.Fatalf("got %d calls to RecordWin but want %d", len(store.WinCalls), 1)
 	}
 
-	if store.winCalls[0] != winner {
-		t.Errorf("did not store correct winner,got '%s', want '%s'", store.winCalls[0], winner)
+	if store.WinCalls[0] != winner {
+		t.Errorf("did not store correct winner,got '%s', want '%s'", store.WinCalls[0], winner)
 	}
 }
