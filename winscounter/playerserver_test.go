@@ -15,7 +15,7 @@ const jsonContentType = "application/json"
 type StubPlayerStore struct {
 	scores   map[string]int
 	winCalls []string
-	league   []Player
+	league   League
 }
 
 func (s StubPlayerStore) GetPlayerScore(name string) int {
@@ -84,13 +84,7 @@ func TestStoreWins(t *testing.T) {
 		server.ServeHTTP(response, request)
 		assertIntEquals(t, response.Code, http.StatusAccepted)
 
-		if len(store.winCalls) != 1 {
-			t.Errorf("got %d calls to RecordWin but want %d", len(store.winCalls), 1)
-		}
-
-		if store.winCalls[0] != player {
-			t.Errorf("did not store corret winner, got '%s' but want '%s'", store.winCalls[0], player)
-		}
+		assertPlayerWin(t, &store, player)
 	})
 }
 
@@ -204,5 +198,17 @@ func assertPlayerSliceEquals(t *testing.T, got, wantedLeague []Player) {
 	t.Helper()
 	if !reflect.DeepEqual(got, wantedLeague) {
 		t.Errorf("got %v but want %v", got, wantedLeague)
+	}
+}
+
+func assertPlayerWin(t *testing.T, store *StubPlayerStore, winner string) {
+	t.Helper()
+
+	if len(store.winCalls) != 1 {
+		t.Fatalf("got %d calls to RecordWin but want %d", len(store.winCalls), 1)
+	}
+
+	if store.winCalls[0] != winner {
+		t.Errorf("did not store correct winner,got '%s', want '%s'", store.winCalls[0], winner)
 	}
 }
